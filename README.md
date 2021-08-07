@@ -1,5 +1,5 @@
 # literate-palm-tree
-literate-palm-tree is an example of how to produce .di file in XML format
+literate-palm-tree is an example of how to open and edit existing xls file
 
 ## Environment
 Eclipse 4.5.2/ jre 1.8/ jdk 8/ Tomcat 9
