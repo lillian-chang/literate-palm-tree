@@ -1,0 +1,165 @@
+public String processXls() throws ServletException, IOException {
+		HttpServletRequest request = ServletActionContext.getRequest();
+		HttpServletResponse response = ServletActionContext.getResponse();
+		Map<String, Object> parameters = new HashMap<String, Object>();
+		try {
+
+			//Get file path from web.xml param value
+			ServletContext context = request.getSession().getServletContext();
+			String Tempfilename = context.getInitParameter("excelPath");
+
+			//Create new workbook from template
+			FileInputStream source = new FileInputStream(Tempfilename);
+			HSSFWorkbook sourceWB = (HSSFWorkbook) WorkbookFactory.create(source);
+			String sourceFile = "source.xls";
+			FileOutputStream out = new FileOutputStream(sourceFile);
+			sourceWB.write(out);
+			out.close();
+
+			//Get from sourceWB
+			InputStream inputStream = new FileInputStream(sourceFile);
+			HSSFWorkbook wb = (HSSFWorkbook) WorkbookFactory.create(inputStream);
+			HSSFSheet sheet = wb.getSheetAt(0);
+
+			File f = new File(Tempfilename);
+			if (f.exists() && !f.isDirectory() && Tempfilename.endsWith("template.xls")) {
+				log.debug("File Exists");
+
+				//Merge cells
+				sheet.addMergedRegion(new CellRangeAddress(1, 2, 0, 0));
+				sheet.addMergedRegion(new CellRangeAddress(1, 2, 1, 1));
+				sheet.addMergedRegion(new CellRangeAddress(1, 2, 2, 2));
+				sheet.addMergedRegion(new CellRangeAddress(1, 2, 3, 3));
+				sheet.addMergedRegion(new CellRangeAddress(1, 2, 4, 4));
+				sheet.addMergedRegion(new CellRangeAddress(1, 2, 5, 5));
+				sheet.addMergedRegion(new CellRangeAddress(1, 2, 6, 6));
+				sheet.addMergedRegion(new CellRangeAddress(1, 2, 7, 7));
+				sheet.addMergedRegion(new CellRangeAddress(1, 2, 8, 9));
+				sheet.addMergedRegion(new CellRangeAddress(1, 2, 10, 10));
+				sheet.addMergedRegion(new CellRangeAddress(1, 2, 11, 11));
+				sheet.addMergedRegion(new CellRangeAddress(1, 2, 12, 12));
+				sheet.addMergedRegion(new CellRangeAddress(1, 2, 13, 13));
+
+        //Get parameters from front-end jsp
+				String VAL_LIST = request.getParameter("DATA");
+				String[] parts = VAL_LIST.split("\\.N,");
+
+				for (int s = 0; s < parts.length; s++) {
+					String item = parts[s];
+					String user = item.substring(0, item.indexOf("."));
+
+					String time = item.substring(item.indexOf(".") + 1);
+					time = time.substring(0, time.indexOf("./"));
+
+					String case_no = item.substring(item.indexOf("/") + 1);
+
+					parameters.put("VAL_1", val_1);
+					parameters.put("VAL_2", val_2);
+					parameters.put("VAL_3", val_3);
+          
+          //Get data from database
+					List<Map<String, Object>> table = tableMapper.queryForxls(parameters);
+
+					for (int i = 0; i < table.size(); i++) {
+						String data_1 = MapUtils.getString(table.get(i), "data_1"); 
+
+						String data_2 = "$10"; 
+						String data_3 = "$300"; 
+						int data_1_Int = Integer.parseInt(data_1);
+						int data_2_Int = 10;
+						int data_3_Int = 300;
+						int data_4_Int = data_1_Int + data_2_Int + data_3_Int;
+						String data_4 = Integer.toString(data_4_Int); 
+
+						String data_5 = MapUtils.getString(table.get(i), "data_5"); 
+						String data_6 = MapUtils.getString(table.get(i), "data_6");
+						String data_6_Trimmed = data_6.substring(0, Math.min(data_6.length(), 3));
+						String data_7 = "0000X" + data_6_Trimmed; 
+						String data_8 = MapUtils.getString(table.get(i), "data_8"); 
+						
+						String data_9 = MapUtils.getString(table.get(i), "data_9");
+						
+            //Start inputting data in xls when cell found empty
+						myBreakLabel: for (int rowIndex = 0; rowIndex <= 38; rowIndex++) {
+							for (int colNum = 0; colNum < 14; colNum++) {
+
+								Row row = sheet.getRow(rowIndex);
+
+								Cell cell = row.getCell(colNum, Row.CREATE_NULL_AS_BLANK);
+								// log.debug(cell.getCellType());
+								// 0: Int, 1: String, 3: Empty
+								// String cellValue = cell.getStringCellValue();
+
+								if (cell.getCellType() == 3 && rowIndex != 2) {
+                  //Insert row index
+									int c = 1;
+									cell = sheet.getRow(rowIndex).getCell(0);
+									cell.setCellValue(c);
+
+									Cell pcell = null;
+									pcell = sheet.getRow(rowIndex - 1).getCell(0);
+									double auto_addition = pcell.getNumericCellValue() + 1;
+									if (pcell.getCellType() == 0) {
+										// cell.setCellType(Cell.CELL_TYPE_NUMERIC);										
+										cell.setCellValue(auto_addition);
+									}
+
+									cell = sheet.getRow(rowIndex).getCell(1);
+									cell.setCellValue(data_1);
+
+									cell = sheet.getRow(rowIndex).getCell(2);
+									cell.setCellValue(data_2);
+
+									cell = sheet.getRow(rowIndex).getCell(3);
+									cell.setCellValue(data_3);
+
+									cell = sheet.getRow(rowIndex).getCell(4);
+									cell.setCellValue(data_4);
+
+									cell = sheet.getRow(rowIndex).getCell(5);
+									cell.setCellValue(data_5);
+
+									cell = sheet.getRow(rowIndex).getCell(6);
+									cell.setCellValue(data_6_Trimmed);
+
+									cell = sheet.getRow(rowIndex).getCell(7);
+									cell.setCellValue(data_7);
+
+									cell = sheet.getRow(rowIndex).getCell(8);
+									cell.setCellValue(data_8);
+
+									cell = sheet.getRow(rowIndex).getCell(9);
+									cell.setCellValue(data_9);
+									break myBreakLabel;
+								}
+								break;
+							}
+
+						}
+
+            //Save and close file
+						filename = FileUtils.getTempDirectory() + "/" + System.currentTimeMillis() + ".xls";
+						FileOutputStream file = new FileOutputStream(filename);
+						wb.write(file);
+						file.close();
+
+					}
+
+				}
+
+			}
+
+			fileStream = new FileInputStream(filename);
+		} catch (Exception e) {
+			String url = "/Example/XXX.jsp";
+			ServletContext sc = request.getSession().getServletContext();
+			RequestDispatcher rd = sc.getRequestDispatcher(url);
+
+			request.setAttribute("message", "File does not exist!");
+			rd.forward(request, response);
+
+			log.error(e);
+		}
+ 
+		return "test-stream";
+	}
